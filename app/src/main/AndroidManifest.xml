@@ -23,7 +23,7 @@
             android:theme="@style/AppTheme"
             tools:replace="android:appComponentFactory"
             android:appComponentFactory="whateverString"
-            android:allowBackup="false">
+            android:allowBackup="true">
 
         <!--OptiSplashScreen-->
         <activity android:name="com.obs.marveleditor.OptiSplashScreen">

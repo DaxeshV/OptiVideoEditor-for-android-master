@@ -64,8 +64,8 @@ class OptiTrimFragment : BottomSheetDialogFragment(), OptiFFMpegCallback {
                 .setType(OptiConstant.VIDEO_TRIM)
                 .setFile(videoFile!!)
                 .setOutputPath(outputFile.path)
-                .setStartTime(actvStartTime?.text.toString())
-                .setEndTime(actvEndTime?.text.toString())
+                .setStartTime("00:00:00")
+                .setEndTime("00:00:20")
                 .setCallback(this)
                 .main()
 
@@ -92,6 +92,21 @@ class OptiTrimFragment : BottomSheetDialogFragment(), OptiFFMpegCallback {
                 actvEndTime?.text = VideoUtils.secToTime(maxValue.toLong())
             }
         })
+
+        val outputFile = OptiUtils.createVideoFile(context!!)
+        Log.v(tagName, "outputFile: ${outputFile.absolutePath}")
+
+        OptiVideoEditor.with(context!!)
+            .setType(OptiConstant.VIDEO_TRIM)
+            .setFile(videoFile!!)
+            .setOutputPath(outputFile.path)
+            .setStartTime("00:00:00")
+            .setEndTime("00:00:20")
+            .setCallback(this)
+            .main()
+
+        helper?.showLoading(true)
+        dismiss()
     }
 
     fun setHelper(helper: OptiBaseCreatorDialogFragment.CallBacks) {

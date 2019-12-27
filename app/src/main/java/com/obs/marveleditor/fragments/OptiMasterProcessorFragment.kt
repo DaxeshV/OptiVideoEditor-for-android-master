@@ -38,6 +38,7 @@ import android.widget.*
 import com.github.hiteshsondhi88.libffmpeg.FFmpeg
 import com.github.hiteshsondhi88.libffmpeg.FFmpegLoadBinaryResponseHandler
 import com.github.hiteshsondhi88.libffmpeg.exceptions.FFmpegNotSupportedException
+import com.github.tcking.giraffecompressor.GiraffeCompressor
 import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.source.TrackGroupArray
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
@@ -98,6 +99,9 @@ class OptiMasterProcessorFragment : Fragment(), OptiBaseCreatorDialogFragment.Ca
     }
 
     private fun initView(rootView: View?) {
+
+        GiraffeCompressor.init(context);
+
         ePlayer = rootView?.findViewById(R.id.ePlayer)
         tvSave = rootView?.findViewById(R.id.tvSave)
         pbLoading = rootView?.findViewById(R.id.pbLoading)
@@ -173,7 +177,7 @@ class OptiMasterProcessorFragment : Fragment(), OptiBaseCreatorDialogFragment.Ca
                 .setPositiveButton(getString(R.string.Continue)) { dialog, which ->
                     if (masterVideoFile != null) {
                         val outputFile = createSaveVideoFile()
-                        OptiCommonMethods.copyFile(masterVideoFile, outputFile)
+                        OptiCommonMethods.copyFile(masterVideoFile, outputFile, context)
                         Toast.makeText(context, R.string.successfully_saved, Toast.LENGTH_SHORT).show()
                         OptiUtils.refreshGallery(outputFile.absolutePath, context!!)
                         tvSave!!.visibility = View.GONE
@@ -551,6 +555,7 @@ class OptiMasterProcessorFragment : Fragment(), OptiBaseCreatorDialogFragment.Ca
                             } else {
                                 playbackPosition = 0
                                 currentWindow = 0
+
                                 initializePlayer()
                             }
                         } else {
@@ -562,6 +567,13 @@ class OptiMasterProcessorFragment : Fragment(), OptiBaseCreatorDialogFragment.Ca
                             intent.putExtra("VideoPath", filePath)
                             intent.putExtra("VideoDuration", OptiCommonMethods.getMediaDuration(context, uri))
                             startActivityForResult(intent, OptiConstant.MAIN_VIDEO_TRIM)
+                        }
+
+                        masterVideoFile?.let { file ->
+                            val trimFragment = OptiTrimFragment()
+                            trimFragment.setHelper(this@OptiMasterProcessorFragment)
+                            trimFragment.setFilePathFromSource(file, exoPlayer?.duration!!)
+                            showBottomSheetDialogFragment(trimFragment)
                         }
                     }
                 }

@@ -13,11 +13,17 @@ import android.content.res.AssetFileDescriptor;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Environment;
+import android.text.format.Formatter;
 import android.util.Log;
+
+import com.github.tcking.giraffecompressor.GiraffeCompressor;
 
 import java.io.*;
 import java.nio.channels.FileChannel;
 import java.util.concurrent.TimeUnit;
+
+import rx.Subscriber;
+import rx.android.schedulers.AndroidSchedulers;
 
 public class OptiCommonMethods {
 
@@ -58,10 +64,9 @@ public class OptiCommonMethods {
     }
 
     //copy file from one source file to destination file
-    public static void copyFile(File sourceFile, File destFile) throws IOException {
-
-
-        if (!destFile.getParentFile().exists())
+    public static void copyFile(File sourceFile, File destFile, Context context) throws IOException {
+        compressFile(sourceFile, destFile, context);
+      /*  if (!destFile.getParentFile().exists())
             destFile.getParentFile().mkdirs();
 
         if (!destFile.exists()) {
@@ -82,7 +87,7 @@ public class OptiCommonMethods {
             if (destination != null) {
                 destination.close();
             }
-        }
+        }*/
     }
 
     //get video duration in seconds
@@ -125,5 +130,38 @@ public class OptiCommonMethods {
         String extension = filePath.substring(filePath.lastIndexOf("."));
         Log.v(tagName, "extension: " + extension);
         return extension;
+    }
+
+    public static void compressFile(File inputFile, File outputFile, Context context){
+        GiraffeCompressor.create() //two implementations: mediacodec and ffmpeg,default is mediacodec
+                .input(inputFile) //set video to be compressed
+                .output(outputFile) //set compressed video output
+                .bitRate(2073600)//set bitrate 码率
+                .resizeFactor(1.0f)//set video resize factor 分辨率缩放,默认保持原分辨率
+                .ready()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Subscriber<GiraffeCompressor.Result>() {
+                    @Override
+                    public void onCompleted() {
+                        Log.e("1","start compress");
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        e.printStackTrace();
+                        Log.e("2","start compress");
+                        Log.e("3","error:"+e.getMessage());
+                    }
+
+                    @Override
+                    public void onNext(GiraffeCompressor.Result s) {
+                        String msg = String.format("compress completed \ntake time:%s \nout put file:%s", s.getCostTime(), s.getOutput());
+
+                        msg = msg + "\ninput file size:"+ Formatter.formatFileSize(context,inputFile.length());
+                        msg = msg + "\nout file size:"+ Formatter.formatFileSize(context,new File(s.getOutput()).length());
+                        System.out.println(msg);
+                        Log.e("4",msg);
+                    }
+                });
     }
 }
