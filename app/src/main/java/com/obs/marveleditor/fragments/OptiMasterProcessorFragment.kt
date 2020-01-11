@@ -11,6 +11,7 @@ import android.Manifest
 import android.app.Activity
 import android.app.Activity.RESULT_OK
 import android.app.AlertDialog
+import android.app.ProgressDialog
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -64,6 +65,7 @@ import java.util.*
 class OptiMasterProcessorFragment : Fragment(), OptiBaseCreatorDialogFragment.CallBacks, OptiVideoOptionListener,
     OptiFFMpegCallback  {
 
+
     private var tagName: String = OptiMasterProcessorFragment::class.java.simpleName
     private lateinit var rootView: View
     private var videoUri: Uri? = null
@@ -71,6 +73,7 @@ class OptiMasterProcessorFragment : Fragment(), OptiBaseCreatorDialogFragment.Ca
     private var permissionList: ArrayList<String> = ArrayList()
     private lateinit var preferences: SharedPreferences
     private lateinit var progressBar: ProgressBar
+    private lateinit var progressDialog: ProgressDialog
     private var tvVideoProcessing: TextView? = null
     private var handler: Handler = Handler()
     private var ibGallery: ImageButton? = null
@@ -91,6 +94,7 @@ class OptiMasterProcessorFragment : Fragment(), OptiBaseCreatorDialogFragment.Ca
     private var isLargeVideo: Boolean? = false
     private var mContext: Context? = null
     private var tvInfo: TextView? = null
+    var mCallBack : CallProgress? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         rootView = inflater.inflate(R.layout.opti_video_processor_fragment, container, false)
@@ -98,9 +102,14 @@ class OptiMasterProcessorFragment : Fragment(), OptiBaseCreatorDialogFragment.Ca
         return rootView
     }
 
+    override fun onAttach(context: Context?) {
+        super.onAttach(context)
+        mCallBack = activity as CallProgress?
+    }
+
     private fun initView(rootView: View?) {
 
-        GiraffeCompressor.init(context);
+        GiraffeCompressor.init(context)
 
         ePlayer = rootView?.findViewById(R.id.ePlayer)
         tvSave = rootView?.findViewById(R.id.tvSave)
@@ -108,6 +117,7 @@ class OptiMasterProcessorFragment : Fragment(), OptiBaseCreatorDialogFragment.Ca
         ibGallery = rootView?.findViewById(R.id.ibGallery)
         ibCamera = rootView?.findViewById(R.id.ibCamera)
         progressBar = rootView?.findViewById(R.id.progressBar)!!
+
         tvVideoProcessing = rootView.findViewById(R.id.tvVideoProcessing)
         tvInfo = rootView.findViewById(R.id.tvInfo)
 
@@ -122,7 +132,7 @@ class OptiMasterProcessorFragment : Fragment(), OptiBaseCreatorDialogFragment.Ca
 
         //add video editing options
         //videoOptions.add(OptiConstant.FLIRT)
-        videoOptions.add(OptiConstant.TRIM)
+        //videoOptions.add(OptiConstant.TRIM)
         //videoOptions.add(OptiConstant.MUSIC)
         //videoOptions.add(OptiConstant.PLAYBACK)
         //videoOptions.add(OptiConstant.TEXT)
@@ -176,10 +186,10 @@ class OptiMasterProcessorFragment : Fragment(), OptiBaseCreatorDialogFragment.Ca
                 .setMessage(getString(R.string.save_video))
                 .setPositiveButton(getString(R.string.Continue)) { dialog, which ->
                     if (masterVideoFile != null) {
-                        val outputFile = createSaveVideoFile()
-                        OptiCommonMethods.copyFile(masterVideoFile, outputFile, context)
-                        Toast.makeText(context, R.string.successfully_saved, Toast.LENGTH_SHORT).show()
-                        OptiUtils.refreshGallery(outputFile.absolutePath, context!!)
+                       // val outputFile = createSaveVideoFile()
+                        mCallBack!!.showProgress()
+                        OptiCommonMethods.copyFile(masterVideoFile, context, this)
+                       // OptiUtils.refreshGallery(outputFile.absolutePath, context!!)
                         tvSave!!.visibility = View.GONE
                     }
                 }
@@ -490,6 +500,13 @@ class OptiMasterProcessorFragment : Fragment(), OptiBaseCreatorDialogFragment.Ca
                             intent.putExtra("VideoDuration", OptiCommonMethods.getMediaDuration(context, uri))
                             startActivityForResult(intent, OptiConstant.MAIN_VIDEO_TRIM)
                         }
+
+                        masterVideoFile?.let { file ->
+                            val trimFragment = OptiTrimFragment()
+                            trimFragment.setHelper(this@OptiMasterProcessorFragment)
+                            trimFragment.setFilePathFromSource(file, exoPlayer?.duration!!)
+                            showBottomSheetDialogFragment(trimFragment)
+                        }
                     }
                 }
             }
@@ -725,6 +742,11 @@ class OptiMasterProcessorFragment : Fragment(), OptiBaseCreatorDialogFragment.Ca
         checkPermission(OptiConstant.VIDEO_GALLERY, Manifest.permission.READ_EXTERNAL_STORAGE)
     }
 
+    override fun hide() {
+        mCallBack!!.hideProgress()
+        Toast.makeText(context, R.string.successfully_saved, Toast.LENGTH_SHORT).show()
+    }
+
     override fun openCamera() {
         releasePlayer()
         checkAllPermission(OptiConstant.PERMISSION_CAMERA)
@@ -803,9 +825,12 @@ class OptiMasterProcessorFragment : Fragment(), OptiBaseCreatorDialogFragment.Ca
                                 context!!,
                                 "com.obs.marveleditor.provider", videoFile!!
                             )
-                            cameraIntent.putExtra(MediaStore.EXTRA_DURATION_LIMIT, 240) //4 minutes
-                            cameraIntent.putExtra(MediaStore.EXTRA_VIDEO_QUALITY, 1)
+
+                            cameraIntent.putExtra(MediaStore.EXTRA_VIDEO_QUALITY, 0)
+                            cameraIntent.putExtra(MediaStore.EXTRA_DURATION_LIMIT, 20) //4 minutes
+                            cameraIntent.putExtra(MediaStore.EXTRA_SIZE_LIMIT, 5491520L)//5*1048*1048=5MB
                             cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, videoFile)
+
                             startActivityForResult(cameraIntent, OptiConstant.RECORD_VIDEO)
                         } else {
                             callPermissionSettings()
@@ -1022,6 +1047,11 @@ class OptiMasterProcessorFragment : Fragment(), OptiBaseCreatorDialogFragment.Ca
     override fun onFinish() {
         Log.v(tagName, "onFinish()")
         showLoading(false)
+    }
+
+    public interface CallProgress {
+        fun showProgress()
+        fun hideProgress()
     }
 
 }

@@ -41,6 +41,7 @@
                 android:layout_height="wrap_content"
                 android:text="@string/select_a_video"
                 android:textColor="@color/white"
+                android:visibility="gone"
                 android:fontFamily="@font/roboto_black"
                 android:textSize="@dimen/_20sdp"
                 android:textStyle="bold"
@@ -58,6 +59,15 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/exoPlayer">
+
+            <ProgressBar
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:id="@+id/progressBar1"
+                    android:visibility="invisible"
+                    android:layout_below="@+id/btnCompressVideo"
+                    android:layout_centerHorizontal="true" />
 
             <ProgressBar
                     android:id="@+id/progressBar"

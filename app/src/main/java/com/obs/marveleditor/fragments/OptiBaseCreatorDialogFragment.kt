@@ -80,6 +80,8 @@ abstract class OptiBaseCreatorDialogFragment : DialogFragment() {
 
         fun onDidNothing()
 
+        fun hide()
+
         fun onFileProcessed(file: File)
 
         fun getFile(): File?

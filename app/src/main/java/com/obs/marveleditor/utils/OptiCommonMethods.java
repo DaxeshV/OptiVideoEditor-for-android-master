@@ -12,20 +12,23 @@ import android.content.Intent;
 import android.content.res.AssetFileDescriptor;
 import android.media.MediaPlayer;
 import android.net.Uri;
-import android.os.Environment;
-import android.text.format.Formatter;
+import android.os.AsyncTask;
 import android.util.Log;
 
-import com.github.tcking.giraffecompressor.GiraffeCompressor;
+import com.obs.marveleditor.fragments.OptiBaseCreatorDialogFragment;
+import com.obs.marveleditor.video.MediaController;
 
-import java.io.*;
-import java.nio.channels.FileChannel;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.concurrent.TimeUnit;
 
-import rx.Subscriber;
-import rx.android.schedulers.AndroidSchedulers;
-
 public class OptiCommonMethods {
+
+    OptiBaseCreatorDialogFragment.CallBacks callProgress = null;
 
     private static String tagName = OptiCommonMethods.class.getSimpleName();
 
@@ -64,8 +67,9 @@ public class OptiCommonMethods {
     }
 
     //copy file from one source file to destination file
-    public static void copyFile(File sourceFile, File destFile, Context context) throws IOException {
-        compressFile(sourceFile, destFile, context);
+    public static void copyFile(File sourceFile, Context context, OptiBaseCreatorDialogFragment.CallBacks callBacks) {
+        new VideoCompressor().execute(sourceFile,callBacks);
+
       /*  if (!destFile.getParentFile().exists())
             destFile.getParentFile().mkdirs();
 
@@ -132,36 +136,31 @@ public class OptiCommonMethods {
         return extension;
     }
 
-    public static void compressFile(File inputFile, File outputFile, Context context){
-        GiraffeCompressor.create() //two implementations: mediacodec and ffmpeg,default is mediacodec
-                .input(inputFile) //set video to be compressed
-                .output(outputFile) //set compressed video output
-                .bitRate(2073600)//set bitrate 码率
-                .resizeFactor(1.0f)//set video resize factor 分辨率缩放,默认保持原分辨率
-                .ready()
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Subscriber<GiraffeCompressor.Result>() {
-                    @Override
-                    public void onCompleted() {
-                        Log.e("1","start compress");
-                    }
 
-                    @Override
-                    public void onError(Throwable e) {
-                        e.printStackTrace();
-                        Log.e("2","start compress");
-                        Log.e("3","error:"+e.getMessage());
-                    }
+    static class VideoCompressor extends AsyncTask<Object, Void, Boolean> {
+        OptiBaseCreatorDialogFragment.CallBacks callBacks;
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            Log.d("COMPRES1","Start video compression");
+        }
 
-                    @Override
-                    public void onNext(GiraffeCompressor.Result s) {
-                        String msg = String.format("compress completed \ntake time:%s \nout put file:%s", s.getCostTime(), s.getOutput());
+        @Override
+        protected Boolean doInBackground(Object... voids) {
+            File path  = (File) voids[0];
+            callBacks =  (OptiBaseCreatorDialogFragment.CallBacks) voids[1];
+            return MediaController.getInstance().convertVideo(path.getPath());
+        }
 
-                        msg = msg + "\ninput file size:"+ Formatter.formatFileSize(context,inputFile.length());
-                        msg = msg + "\nout file size:"+ Formatter.formatFileSize(context,new File(s.getOutput()).length());
-                        System.out.println(msg);
-                        Log.e("4",msg);
-                    }
-                });
+        @Override
+        protected void onPostExecute(Boolean compressed) {
+            super.onPostExecute(compressed);
+            if(compressed){
+                callBacks.hide();
+                Log.d("COMPRES1","Compression successfully!");
+            }
+        }
     }
+
+
 }

@@ -75,7 +75,7 @@ class OptiAddClipArtFragment : BottomSheetDialogFragment(), OptiClipArtListener,
 
         val listFile: Array<File>
 
-        val file = File(
+       /* val file = File(
             Environment.getExternalStorageDirectory(),
             File.separator + OptiConstant.APP_NAME + File.separator + OptiConstant.CLIP_ARTS + File.separator
         )
@@ -85,7 +85,7 @@ class OptiAddClipArtFragment : BottomSheetDialogFragment(), OptiClipArtListener,
             for (i in listFile.indices) {
                 clipArtFilePath.add(listFile[i].absolutePath)
             }
-        }
+        }*/
 
         optiClipArtAdapter = OptiClipArtAdapter(clipArtFilePath, activity!!.applicationContext, this)
         rvClipArt.adapter = optiClipArtAdapter
